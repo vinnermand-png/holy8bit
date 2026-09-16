@@ -25,11 +25,12 @@ npm run start
 - `app/`: App Router pages, metadata, robots, sitemap, and global styles
 - `components/`: shared header, footer, foundation pages, and artwork renderer
 - `content/home.ts`: typed homepage themes, stories, Scripture features, and archive slots
+- `content/wallpapers.ts`: typed curated wallpaper collection; currently empty until final artwork exists
 - `public/images/`: optimized web artwork assets, organized by `home`, `scripture`, `stories`, and `gallery`
 
 ## Routes
 
-Real routes currently available: `/`, `/scripture`, `/stories`, `/gallery`, and `/about`. Individual Scripture, story, and gallery detail routes are intentionally not created until real content exists.
+Real routes currently available: `/`, `/scripture`, `/stories`, `/gallery`, `/wallpapers`, and `/about`. Individual Scripture, story, gallery, and wallpaper detail routes are intentionally not created until real content exists.
 
 ## Artwork Workflow
 
@@ -41,6 +42,29 @@ Real routes currently available: `/`, `/scripture`, `/stories`, `/gallery`, and 
 6. Verify desktop and mobile crops, then run lint, typecheck, and build.
 
 The current homepage uses abstract development placeholders. They are deliberately not final biblical artwork and can be replaced without changing layout structure.
+
+## Wallpapers
+
+The `/wallpapers` route is a Scripture-connected foundation page. The curated collection is controlled in `content/wallpapers.ts` and is intentionally empty until approved artwork exists.
+
+Use this asset convention for future wallpaper entries:
+
+- `public/images/wallpapers/previews/`: optimized WebP/AVIF website previews
+- `public/images/wallpapers/desktop/`: high-quality desktop download files
+- `public/images/wallpapers/mobile/`: high-quality mobile download files
+
+Preview assets are for fast responsive page rendering. Download assets are separate and should prioritize visual quality. A wallpaper entry connects back to Scripture through `scriptureHref` and can use different desktop/mobile files and focal positions.
+
+Future wallpaper workflow:
+
+1. Finish a Scripture-rooted HOLY8BIT artwork.
+2. Create desktop and mobile wallpaper exports.
+3. Create an optimized website preview.
+4. Add each asset to the appropriate wallpapers directory.
+5. Add the typed entry to `content/wallpapers.ts` with meaningful alt text and Scripture connection.
+6. Set focal positions if desktop and mobile crops differ.
+7. Verify both responsive crops and download links.
+8. Run lint, typecheck, and build.
 
 ## SEO
 
