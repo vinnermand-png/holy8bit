@@ -26,11 +26,20 @@ npm run start
 - `components/`: shared header, footer, foundation pages, and artwork renderer
 - `content/home.ts`: typed homepage themes, stories, Scripture features, and archive slots
 - `content/wallpapers.ts`: typed curated wallpaper collection; currently empty until final artwork exists
+- `content/films.ts`: typed film collections and film entries
 - `public/images/`: optimized web artwork assets, organized by `home`, `scripture`, `stories`, and `gallery`
 
 ## Routes
 
-Real routes currently available: `/`, `/scripture`, `/stories`, `/gallery`, `/wallpapers`, and `/about`. Individual Scripture, story, gallery, and wallpaper detail routes are intentionally not created until real content exists.
+Real routes currently available: `/`, `/scripture`, `/stories`, `/films`, `/films/genesis`, `/films/genesis/in-the-beginning`, `/gallery`, `/wallpapers`, and `/about`. Individual Scripture, story, gallery, and wallpaper detail routes are intentionally not created until real content exists.
+
+## Films
+
+HOLY8BIT Films is a Scripture-rooted cinematic archive. The first collection is `/films/genesis` and its first real production entry is `/films/genesis/in-the-beginning`. Film content is controlled in `content/films.ts`.
+
+The current development preview is stored at `public/films/genesis/in-the-beginning/in-the-beginning-preview.mp4`. When a newer production cut exists, export an H.264 MP4 with the same filename and replace the file. The film page uses native HTML5 video with controls, `playsInline`, `preload="metadata"`, and no autoplay. A future poster can be added at `public/films/genesis/in-the-beginning/poster.webp` and assigned through `posterSrc` in the film content entry.
+
+The `/films` and `/films/genesis` archive routes are included in the sitemap. The unfinished detail preview route is intentionally not included in the sitemap until the film is ready for public discovery.
 
 ## Artwork Workflow
 
