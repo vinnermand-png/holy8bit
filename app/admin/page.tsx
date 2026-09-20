@@ -1,88 +1,45 @@
 import type { Metadata } from "next";
-import { createScriptureWork, createWallpaper, setWallpaperStatus, setWorkStatus, signIn, signOut, deleteScriptureWork, deleteWallpaper } from "./actions";
+import { createScriptureWork, setWorkStatus, signIn, signOut, deleteScriptureWork, updateScriptureWork } from "./actions";
 import DeleteConfirmButton from "../../components/DeleteConfirmButton";
 import { getAdminAccess, getStudioData } from "../../lib/admin/session";
-import { formatPassageReference } from "../../lib/bible/reference";
-import { isScriptureAudioConfigured } from "../../lib/scripture/audio";
 import { getScriptureDataSourceState } from "../../lib/scripture/queries";
-import { isScriptureTextConfigured } from "../../lib/bible/text";
 
 export const metadata: Metadata = { title: "Studio", robots: { index: false, follow: false } };
-
-type Props = { searchParams: { notice?: string } };
-
 export const dynamic = "force-dynamic";
-
 
 function Notice({ message }: { message: string | null }) {
   if (!message) return null;
-  return (
-    <p className="studio-notice" role="status">
-      {message}
-    </p>
-  );
+  return <p className="studio-notice" role="status">{message}</p>;
 }
 
-export default async function StudioPage({ searchParams }: Props) {
+export default async function StudioPage({ searchParams }: { searchParams: { notice?: string; edit?: string; view?: string } }) {
   const [access, dataSource] = await Promise.all([getAdminAccess(), getScriptureDataSourceState()]);
   const notice = typeof searchParams.notice === "string" ? searchParams.notice : null;
+  const editId = typeof searchParams.edit === "string" ? searchParams.edit : null;
+  const view = typeof searchParams.view === "string" ? searchParams.view : "list";
 
   if (access.status !== "admin") {
     return (
       <div className="foundation-page studio-page">
         <main className="studio-main">
           <div className="wrap studio-inner">
-            <p className="eyebrow">HOLY8BIT · STUDIO</p>
+            <p className="eyebrow">HOLY8BIT — STUDIO</p>
             <h1 className="scripture-display-title">Studio</h1>
             <Notice message={notice} />
             {access.status === "signed-out" && (
               <>
-                <p className="studio-copy">
-                  The studio publishes Scripture Works and wallpapers. Access is limited to active HOLY8BIT
-                  administrators; the database refuses every other account.
-                </p>
+                <p className="studio-copy">Sign in to access the publishing studio.</p>
                 <form className="studio-form studio-form-narrow" action={signIn}>
-                  <label className="studio-field">
-                    <span className="eyebrow">EMAIL</span>
-                    <input name="email" type="email" autoComplete="email" required />
-                  </label>
-                  <label className="studio-field">
-                    <span className="eyebrow">PASSWORD</span>
-                    <input name="password" type="password" autoComplete="current-password" required />
-                  </label>
-                  <button className="button" type="submit">
-                    SIGN IN
-                  </button>
+                  <label className="studio-field"><span className="eyebrow">EMAIL</span><input name="email" type="email" autoComplete="email" required /></label>
+                  <label className="studio-field"><span className="eyebrow">PASSWORD</span><input name="password" type="password" autoComplete="current-password" required /></label>
+                  <button className="button" type="submit">SIGN IN</button>
                 </form>
               </>
             )}
-            {access.status === "refused" && (
-              <p className="studio-copy">
-                {access.email ?? "This account"} is signed in but is not an active HOLY8BIT administrator. Ask an owner
-                to add it to <code>admin_users</code>, or sign in with an administrator account.
-              </p>
-            )}
-            {access.status === "unavailable" && (
-              <p className="studio-copy">
-                The studio could not reach its publishing database. Apply the migrations in <code>supabase/</code> and
-                confirm the environment variables before publishing.
-              </p>
-            )}
             <div className="studio-status">
               <p className="eyebrow">PUBLISHING SOURCE</p>
-              <p className="studio-status-line">
-                {dataSource === "supabase"
-                  ? "CONNECTED"
-                  : dataSource === "unconfigured"
-                    ? "NOT CONFIGURED · SUPABASE ENVIRONMENT VARIABLES ARE MISSING"
-                    : "UNREACHABLE · THE PROJECT HAS NO TABLES OR CANNOT BE REACHED"}
-              </p>
+              <p className="studio-status-line">{dataSource === "supabase" ? "CONNECTED" : "NOT CONFIGURED"}</p>
             </div>
-            <p className="studio-note">
-              <a className="text-link" href="/">
-                BACK TO THE SITE <span aria-hidden="true">→</span>
-              </a>
-            </p>
           </div>
         </main>
       </div>
@@ -90,167 +47,102 @@ export default async function StudioPage({ searchParams }: Props) {
   }
 
   const data = await getStudioData();
-  const publishedWorks = data.works.filter((work) => work.status === "published");
-  const publishedWallpapers = data.wallpapers.filter((wallpaper) => wallpaper.status === "published");
+  const publishedWorks = data.works.filter((w) => w.status === "published");
 
+  /* ── EDIT VIEW ─────────────────────────────────── */
+  if (editId) {
+    const work = data.works.find((w) => w.id === editId);
+    if (!work) {
+      return (
+        <div className="foundation-page studio-page">
+          <main className="studio-main">
+            <div className="wrap studio-inner">
+              <p className="studio-copy">Work not found.</p>
+              <a className="text-link" href="/admin">BACK</a>
+            </div>
+          </main>
+        </div>
+      );
+    }
+    return (
+      <div className="foundation-page studio-page">
+        <main className="studio-main">
+          <div className="wrap studio-inner">
+            <div className="studio-header-row">
+              <div>
+                <p className="eyebrow">EDIT SCRIPTURE</p>
+                <h1 className="scripture-display-title">{work.title}</h1>
+              </div>
+              <a className="text-link" href="/admin">BACK TO LIST</a>
+            </div>
+            <Notice message={notice} />
+            <WorkForm books={data.books} work={work} />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  /* ── NEW VIEW ──────────────────────────────────── */
+  if (view === "new") {
+    return (
+      <div className="foundation-page studio-page">
+        <main className="studio-main">
+          <div className="wrap studio-inner">
+            <div className="studio-header-row">
+              <div>
+                <p className="eyebrow">NEW SCRIPTURE</p>
+                <h1 className="scripture-display-title">Create</h1>
+              </div>
+              <a className="text-link" href="/admin">BACK TO LIST</a>
+            </div>
+            <Notice message={notice} />
+            <WorkForm books={data.books} />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  /* ── LIST VIEW ─────────────────────────────────── */
   return (
     <div className="foundation-page studio-page">
       <main className="studio-main">
         <div className="wrap studio-inner">
-          <p className="eyebrow">HOLY8BIT · STUDIO</p>
+          <p className="eyebrow">HOLY8BIT — STUDIO</p>
           <h1 className="scripture-display-title">Studio</h1>
           <Notice message={notice} />
-          <p className="studio-copy">
-            Signed in as {access.identity.email ?? access.identity.userId} · {access.identity.role.toUpperCase()}
-          </p>
-          <form action={signOut}>
-            <button className="studio-button-quiet" type="submit">
-              SIGN OUT
-            </button>
-          </form>
-
-          <section className="studio-section" aria-labelledby="studio-status-title">
-            <p className="eyebrow" id="studio-status-title">
-              SYSTEM
-            </p>
-            <ul className="studio-status-list">
-              <li>
-                <span>PUBLISHING SOURCE</span>
-                <strong>{dataSource === "supabase" ? "CONNECTED" : dataSource === "unconfigured" ? "NOT CONFIGURED" : "UNREACHABLE"}</strong>
-              </li>
-              <li>
-                <span>BIBLE STRUCTURE</span>
-                <strong>{data.books.length} BOOKS</strong>
-              </li>
-              <li>
-                <span>SCRIPTURE WORKS</span>
-                <strong>
-                  {publishedWorks.length} PUBLISHED · {data.works.length - publishedWorks.length} DRAFT
-                </strong>
-              </li>
-              <li>
-                <span>WALLPAPERS</span>
-                <strong>
-                  {publishedWallpapers.length} PUBLISHED · {data.wallpapers.length - publishedWallpapers.length} DRAFT
-                </strong>
-              </li>
-              <li>
-                <span>SCRIPTURE TEXT</span>
-                <strong>{isScriptureTextConfigured() ? "CONFIGURED" : "TRANSLATION NOT CONFIGURED"}</strong>
-              </li>
-              <li>
-                <span>SCRIPTURE AUDIO</span>
-                <strong>{isScriptureAudioConfigured() ? "CONFIGURED" : "LICENSED SOURCE NOT CONFIGURED"}</strong>
-              </li>
-            </ul>
-          </section>
-
-          <section className="studio-section" aria-labelledby="studio-work-title">
-            <p className="eyebrow" id="studio-work-title">
-              PUBLISH A SCRIPTURE WORK
-            </p>
-            <form className="studio-form" action={createScriptureWork}>
-              <label className="studio-field">
-                <span className="eyebrow">TITLE</span>
-                <input name="title" type="text" maxLength={200} required />
-              </label>
-              <label className="studio-field">
-                <span className="eyebrow">BIBLE BOOK</span>
-                <select name="book_slug" defaultValue="john" required>
-                  {data.books.map((book) => (
-                    <option value={book.slug} key={book.slug}>
-                      {book.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="studio-grid">
-                <label className="studio-field">
-                  <span className="eyebrow">CHAPTER</span>
-                  <input name="chapter_start" type="number" min={1} required />
-                </label>
-                <label className="studio-field">
-                  <span className="eyebrow">CHAPTER END</span>
-                  <input name="chapter_end" type="number" min={1} placeholder="same as start" />
-                </label>
-                <label className="studio-field">
-                  <span className="eyebrow">VERSE START</span>
-                  <input name="verse_start" type="number" min={1} />
-                </label>
-                <label className="studio-field">
-                  <span className="eyebrow">VERSE END</span>
-                  <input name="verse_end" type="number" min={1} />
-                </label>
-              </div>
-              <label className="studio-check">
-                <input name="whole_chapter" type="checkbox" /> WHOLE CHAPTER (leave verses empty)
-              </label>
-              <label className="studio-field">
-                <span className="eyebrow">DESCRIPTION</span>
-                <textarea name="description" rows={3} maxLength={600} />
-              </label>
-              <div className="studio-grid">
-                <label className="studio-field">
-                  <span className="eyebrow">MEDIA TYPE</span>
-                  <select name="media_type" defaultValue="video">
-                    <option value="video">VIDEO</option>
-                    <option value="image">IMAGE</option>
-                    <option value="gif">GIF</option>
-                  </select>
-                </label>
-                <label className="studio-field">
-                  <span className="eyebrow">INTERNAL PRODUCTION REF</span>
-                  <input name="internal_production_ref" type="text" maxLength={80} />
-                </label>
-              </div>
-              <label className="studio-field">
-                <span className="eyebrow">ARTWORK FILE</span>
-                <input name="media_file" type="file" accept="video/*,image/*" />
-              </label>
-              <label className="studio-field">
-                <span className="eyebrow">OR EXISTING STORAGE PATH</span>
-                <input name="media_path" type="text" placeholder="works/john/1-1-9/artwork.mp4" />
-              </label>
-              <label className="studio-field">
-                <span className="eyebrow">COVER / POSTER IMAGE</span>
-                <input name="cover_file" type="file" accept="image/*" />
-              </label>
-              <label className="studio-check">
-                <input name="status" type="checkbox" value="published" /> PUBLISH IMMEDIATELY
-              </label>
-              <button className="button" type="submit">
-                SAVE SCRIPTURE WORK
-              </button>
+          <div className="studio-header-row">
+            <p className="studio-copy">Signed in as {access.identity.email} — {access.identity.role.toUpperCase()}</p>
+            <form action={signOut}>
+              <button className="studio-button-quiet" type="submit">SIGN OUT</button>
             </form>
-          </section>
+          </div>
 
-          <section className="studio-section" aria-labelledby="studio-library-title">
-            <p className="eyebrow" id="studio-library-title">
-              SCRIPTURE WORKS
-            </p>
+          <section className="studio-section">
+            <div className="studio-header-row">
+              <p className="eyebrow">SCRIPTURE WORKS — {data.works.length}</p>
+              <a className="button" href="/admin?view=new">+ NEW SCRIPTURE</a>
+            </div>
             {data.works.length === 0 ? (
-              <p className="studio-copy">No Scripture Works exist yet. The first published work fills the archive automatically.</p>
+              <p className="studio-copy">No works yet. Create your first Scripture Work.</p>
             ) : (
               <ul className="studio-list">
-                {data.works.map((work) => (
-                  <li key={work.id}>
+                {data.works.map((w) => (
+                  <li key={w.id}>
                     <span className="studio-list-main">
-                      <strong>{work.title}</strong>
-                      <small>
-                        {formatPassageReference(work.bookName, work.passage)} · {work.mediaType.toUpperCase()} ·{" "}
-                        {work.wallpaperCount} WALLPAPER{work.wallpaperCount === 1 ? "" : "S"}
-                      </small>
+                      <strong>{w.title}</strong>
+                      <small>{w.bookName} {w.passage.chapter_start}:{w.passage.verse_start ?? "–"}{w.passage.verse_end ? "-" + w.passage.verse_end : ""} — {w.mediaType.toUpperCase()}</small>
                     </span>
-                    <span className={`studio-badge${work.status === "published" ? " is-live" : ""}`}>{work.status.toUpperCase()}</span>
-                    <form action={setWorkStatus}>
-                      <input name="work_id" type="hidden" value={work.id} />
-                      <input name="status" type="hidden" value={work.status === "published" ? "draft" : "published"} />
-                      <button className="studio-button-quiet" type="submit">
-                        {work.status === "published" ? "UNPUBLISH" : "PUBLISH"}
-                      </button>
+                    <span className={`studio-badge${w.status === "published" ? " is-live" : ""}`}>{w.status.toUpperCase()}</span>
+                    <a className="studio-button-quiet" href={"/admin?edit=" + w.id}>EDIT</a>
+                    <form action={setWorkStatus} style={{ display: "inline" }}>
+                      <input name="work_id" type="hidden" value={w.id} />
+                      <input name="status" type="hidden" value={w.status === "published" ? "draft" : "published"} />
+                      <button className="studio-button-quiet" type="submit">{w.status === "published" ? "UNPUBLISH" : "PUBLISH"}</button>
                     </form>
-                    <form action={deleteScriptureWork}>
-                      <input name="work_id" type="hidden" value={work.id} />
+                    <form action={deleteScriptureWork} style={{ display: "inline" }}>
+                      <input name="work_id" type="hidden" value={w.id} />
                       <DeleteConfirmButton label="DELETE" />
                     </form>
                   </li>
@@ -259,93 +151,137 @@ export default async function StudioPage({ searchParams }: Props) {
             )}
           </section>
 
-          <section className="studio-section" aria-labelledby="studio-wallpaper-title">
-            <p className="eyebrow" id="studio-wallpaper-title">
-              ATTACH A WALLPAPER
-            </p>
-            {data.works.length === 0 ? (
-              <p className="studio-copy">A wallpaper renders a published Scripture Work, so publish a work first.</p>
-            ) : (
-              <form className="studio-form" action={createWallpaper}>
-                <label className="studio-field">
-                  <span className="eyebrow">SCRIPTURE WORK</span>
-                  <select name="work_id" required>
-                    {data.works.map((work) => (
-                      <option value={work.id} key={work.id}>
-                        {formatPassageReference(work.bookName, work.passage)} · {work.title} ({work.status})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="studio-grid">
-                  <label className="studio-field">
-                    <span className="eyebrow">LABEL</span>
-                    <input name="label" type="text" placeholder="PHONE" maxLength={120} required />
-                  </label>
-                  <label className="studio-field">
-                    <span className="eyebrow">SORT ORDER</span>
-                    <input name="sort_order" type="number" min={0} defaultValue={0} />
-                  </label>
-                  <label className="studio-field">
-                    <span className="eyebrow">WIDTH (PX)</span>
-                    <input name="width_px" type="number" min={1} required />
-                  </label>
-                  <label className="studio-field">
-                    <span className="eyebrow">HEIGHT (PX)</span>
-                    <input name="height_px" type="number" min={1} required />
-                  </label>
-                </div>
-                <label className="studio-field">
-                  <span className="eyebrow">WALLPAPER FILE</span>
-                  <input name="wallpaper_file" type="file" accept="image/*" />
-                </label>
-                <label className="studio-field">
-                  <span className="eyebrow">OR EXISTING STORAGE PATH</span>
-                  <input name="storage_path" type="text" placeholder="renditions/…/phone.png" />
-                </label>
-                <label className="studio-field">
-                  <span className="eyebrow">DOWNLOAD FILE NAME</span>
-                  <input name="file_name" type="text" placeholder="holy8bit-john-1-1-9-phone.png" />
-                </label>
-                <label className="studio-check">
-                  <input name="status" type="checkbox" value="published" /> PUBLISH IMMEDIATELY
-                </label>
-                <button className="button" type="submit">
-                  SAVE WALLPAPER
-                </button>
-              </form>
-            )}
+          <section className="studio-section">
+            <p className="eyebrow">SYSTEM</p>
+            <ul className="studio-status-list">
+              <li><span>SOURCE</span><strong>{dataSource === "supabase" ? "CONNECTED" : "NOT CONFIGURED"}</strong></li>
+              <li><span>BOOKS</span><strong>{data.books.length}</strong></li>
+              <li><span>WORKS</span><strong>{publishedWorks.length} PUBLISHED — {data.works.length - publishedWorks.length} DRAFT</strong></li>
+            </ul>
           </section>
-
-          {data.wallpapers.length > 0 && (
-            <section className="studio-section" aria-labelledby="studio-wallpaper-list-title">
-              <p className="eyebrow" id="studio-wallpaper-list-title">
-                WALLPAPER RENDITIONS
-              </p>
-              <ul className="studio-list">
-                {data.wallpapers.map((wallpaper) => (
-                  <li key={wallpaper.id}>
-                    <span className="studio-list-main">
-                      <strong>{wallpaper.label}</strong>
-                      <small>
-                        {wallpaper.widthPx} × {wallpaper.heightPx} · {wallpaper.storagePath}
-                      </small>
-                    </span>
-                    <span className={`studio-badge${wallpaper.status === "published" ? " is-live" : ""}`}>{wallpaper.status.toUpperCase()}</span>
-                    <form action={setWallpaperStatus}>
-                      <input name="wallpaper_id" type="hidden" value={wallpaper.id} />
-                      <input name="status" type="hidden" value={wallpaper.status === "published" ? "draft" : "published"} />
-                      <button className="studio-button-quiet" type="submit">
-                        {wallpaper.status === "published" ? "UNPUBLISH" : "PUBLISH"}
-                      </button>
-                    </form>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
         </div>
       </main>
     </div>
+  );
+}
+
+/* ── WORK FORM (shared create/edit) ──────────────── */
+
+function WorkForm({
+  books,
+  work,
+}: {
+  books: Array<{ id: number; name: string; slug: string; testament: string; chapterCount: number }>;
+  work?: {
+    id: string;
+    title: string;
+    bookSlug: string;
+    passage: {
+      chapter_start: number;
+      verse_start: number | null;
+      chapter_end: number;
+      verse_end: number | null;
+      whole_chapter: boolean;
+    };
+    description: string | null;
+    mediaType: string;
+    mediaPath: string;
+    coverPath: string | null;
+    status: string;
+  };
+}) {
+  const isEdit = !!work;
+  const action = isEdit ? updateScriptureWork : createScriptureWork;
+
+  return (
+    <form className="studio-form" action={action}>
+      {isEdit && <input type="hidden" name="work_id" value={work.id} />}
+
+      <div className="studio-grid">
+        <label className="studio-field">
+          <span className="eyebrow">BOOK *</span>
+          <select name="book_slug" defaultValue={work?.bookSlug || "john"} required>
+            {books.map((b) => (
+              <option key={b.slug} value={b.slug}>{b.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="studio-field">
+          <span className="eyebrow">CHAPTER *</span>
+          <input name="chapter_start" type="number" min={1} defaultValue={work?.passage.chapter_start || 1} required />
+        </label>
+        <label className="studio-field">
+          <span className="eyebrow">VERSE START</span>
+          <input name="verse_start" type="number" min={1} defaultValue={work?.passage.verse_start || ""} />
+        </label>
+        <label className="studio-field">
+          <span className="eyebrow">VERSE END</span>
+          <input name="verse_end" type="number" min={1} defaultValue={work?.passage.verse_end || ""} />
+        </label>
+      </div>
+
+      <label className="studio-check">
+        <input name="whole_chapter" type="checkbox" defaultChecked={work?.passage.whole_chapter || false} />
+        <span>WHOLE CHAPTER</span>
+      </label>
+
+      <label className="studio-field">
+        <span className="eyebrow">TITLE *</span>
+        <input name="title" type="text" maxLength={200} defaultValue={work?.title || ""} required />
+      </label>
+
+      <label className="studio-field">
+        <span className="eyebrow">DESCRIPTION</span>
+        <textarea name="description" rows={3} maxLength={600} defaultValue={work?.description || ""} />
+      </label>
+
+      <div className="studio-grid">
+        <label className="studio-field">
+          <span className="eyebrow">MEDIA TYPE *</span>
+          <select name="media_type" defaultValue={work?.mediaType || "image"}>
+            <option value="image">IMAGE</option>
+            <option value="gif">GIF</option>
+            <option value="video">VIDEO</option>
+          </select>
+        </label>
+        <label className="studio-field">
+          <span className="eyebrow">INTERNAL REF</span>
+          <input name="internal_production_ref" type="text" maxLength={80} defaultValue="" />
+        </label>
+      </div>
+
+      <label className="studio-field">
+        <span className="eyebrow">STORAGE PATH</span>
+        <input
+          name="media_path"
+          type="text"
+          defaultValue={work?.mediaPath || ""}
+          placeholder="works/john/john-1-4-5/filename.gif"
+        />
+        <small className="studio-help">Full path in Supabase Storage (including filename)</small>
+      </label>
+
+      <label className="studio-field">
+        <span className="eyebrow">COVER PATH (optional)</span>
+        <input name="cover_path" type="text" defaultValue={work?.coverPath || ""} placeholder="Optional cover image path" />
+      </label>
+
+      <label className="studio-check">
+        <input name="status" type="checkbox" value="published" defaultChecked={work?.status === "published"} />
+        <span>PUBLISH</span>
+      </label>
+
+      {isEdit && (
+        <div className="studio-current-media">
+          <p className="eyebrow">CURRENT MEDIA</p>
+          <p className="studio-copy">{work?.mediaPath || "None"}</p>
+        </div>
+      )}
+
+      <div className="studio-form-actions">
+        <button className="button" type="submit">{isEdit ? "UPDATE SCRIPTURE" : "SAVE SCRIPTURE WORK"}</button>
+        {!isEdit && <p className="studio-help">Save as draft first, then edit to upload media and publish.</p>}
+      </div>
+    </form>
   );
 }

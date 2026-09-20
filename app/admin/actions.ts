@@ -326,3 +326,98 @@ export async function deleteWallpaper(formData: FormData) {
   if (error) notice(error.message);
   notice("Wallpaper deleted.");
 }
+
+/**
+ * Updates an existing Scripture Work. If the passage changed, provisions a new
+ * passage key and cleans up the old one.
+ */
+export async function updateScriptureWork(formData: FormData) {
+  await assertAdmin();
+
+  const workId = text(formData, "work_id");
+  if (!workId) notice("Unknown Scripture Work.");
+
+  const title = text(formData, "title");
+  const bookSlug = text(formData, "book_slug");
+  const chapterStartRaw = positiveInt(formData, "chapter_start");
+  const chapterEndRaw = positiveInt(formData, "chapter_end");
+  const wholeChapter = text(formData, "whole_chapter") === "on";
+  const verseStartRaw = wholeChapter ? null : positiveInt(formData, "verse_start");
+  const verseEndRaw = wholeChapter ? null : positiveInt(formData, "verse_end");
+  const mediaTypeRaw = text(formData, "media_type");
+  const mediaPathInput = text(formData, "media_path");
+  const coverPathInput = text(formData, "cover_path");
+  const publish = text(formData, "status") === "published";
+
+  if (!title) notice("A Scripture Work needs a title.");
+  if (!bookSlug) notice("Choose the Bible book.");
+  if (!chapterStartRaw) notice("A chapter is required.");
+
+  const chapterStart = chapterStartRaw;
+  const chapterEnd = chapterEndRaw ?? chapterStart;
+  if (chapterEnd < chapterStart) notice("The chapter range ends before it starts.");
+
+  let verseStart: number | null = null;
+  let verseEnd: number | null = null;
+  if (!wholeChapter) {
+    if (!verseStartRaw || !verseEndRaw) notice("Verse start and end are required.");
+    if (verseEndRaw! < verseStartRaw!) notice("The verse range ends before it starts.");
+    verseStart = verseStartRaw;
+    verseEnd = verseEndRaw;
+  }
+
+  if (!["video", "image", "gif"].includes(mediaTypeRaw)) notice("Choose a media type.");
+  const mediaType = mediaTypeRaw as "video" | "image" | "gif";
+
+  const supabase = createSupabaseServerClient();
+
+  // Get the existing work
+  const { data: existing } = await supabase
+    .from("scripture_works")
+    .select("passage_key, media_path, cover_path")
+    .eq("id", workId)
+    .single();
+
+  if (!existing) notice("Scripture Work not found.");
+
+  // Provision the passage key (may be the same or new)
+  let passageKey: string;
+  try {
+    const { data, error } = await supabase.rpc("ensure_bible_passage", {
+      p_book_slug: bookSlug,
+      p_chapter_start: chapterStart,
+      p_verse_start: verseStart,
+      p_chapter_end: chapterEnd,
+      p_verse_end: verseEnd,
+      p_whole_chapter: wholeChapter
+    });
+    if (error || !data) throw new Error(error?.message ?? "Passage could not be provisioned.");
+    passageKey = data;
+  } catch (error) {
+    notice(error instanceof Error ? error.message : "Passage error.");
+  }
+
+  // Update the work
+  const updateData: Record<string, unknown> = {
+    passage_key: passageKey,
+    title,
+    description: text(formData, "description") || null,
+    media_type: mediaType,
+    internal_production_ref: text(formData, "internal_production_ref") || null,
+    status: publish ? "published" : "draft",
+    published_at: publish ? new Date().toISOString() : null,
+    updated_at: new Date().toISOString()
+  };
+
+  // Only update media_path if a new path was provided
+  if (mediaPathInput) updateData.media_path = mediaPathInput;
+  if (coverPathInput !== undefined) updateData.cover_path = coverPathInput || null;
+
+  const { error } = await supabase
+    .from("scripture_works")
+    .update(updateData)
+    .eq("id", workId);
+
+  if (error) notice(error.message);
+  notice(title + " updated.");
+}
