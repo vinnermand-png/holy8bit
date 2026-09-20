@@ -1,6 +1,6 @@
-import React from "react";
 import type { Metadata } from "next";
 import { createScriptureWork, createWallpaper, setWallpaperStatus, setWorkStatus, signIn, signOut, deleteScriptureWork, deleteWallpaper } from "./actions";
+import DeleteConfirmButton from "../../components/DeleteConfirmButton";
 import { getAdminAccess, getStudioData } from "../../lib/admin/session";
 import { formatPassageReference } from "../../lib/bible/reference";
 import { isScriptureAudioConfigured } from "../../lib/scripture/audio";
@@ -13,28 +13,6 @@ type Props = { searchParams: { notice?: string } };
 
 export const dynamic = "force-dynamic";
 
-
-function DeleteButton({ action, label, itemName }: { action: any; label: string; itemName: string }) {
-  const [showConfirm, setShowConfirm] = React.useState(false);
-  
-  if (showConfirm) {
-    return (
-      <span className="delete-confirm">
-        <span className="delete-confirm-text">ER DU SIKKER?</span>
-        <form action={action} style={{ display: 'inline' }}>
-          <button type="submit" className="studio-button-quiet delete-yes">JA</button>
-        </form>
-        <button type="button" className="studio-button-quiet delete-no" onClick={() => setShowConfirm(false)}>NEJ</button>
-      </span>
-    );
-  }
-  
-  return (
-    <button type="button" className="studio-button-quiet delete-trigger" onClick={() => setShowConfirm(true)}>
-      {label}
-    </button>
-  );
-}
 
 function Notice({ message }: { message: string | null }) {
   if (!message) return null;
@@ -273,7 +251,7 @@ export default async function StudioPage({ searchParams }: Props) {
                     </form>
                     <form action={deleteScriptureWork}>
                       <input name="work_id" type="hidden" value={work.id} />
-                      <DeleteButton action={deleteScriptureWork} label="DELETE" itemName={work.title} />
+                      <DeleteConfirmButton label="DELETE" />
                     </form>
                   </li>
                 ))}
