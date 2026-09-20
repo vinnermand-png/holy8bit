@@ -270,3 +270,59 @@ export async function setWallpaperStatus(formData: FormData) {
   if (result.error) notice(result.error.message);
   notice(status === "published" ? "Wallpaper published." : "Wallpaper returned to draft.");
 }
+
+
+export async function deleteScriptureWork(formData: FormData) {
+  await assertAdmin();
+  const workId = text(formData, "work_id");
+  if (!workId) notice("Unknown Scripture Work.");
+
+  const supabase = createSupabaseServerClient();
+  
+  const { data: work } = await supabase
+    .from("scripture_works")
+    .select("media_path, cover_path")
+    .eq("id", workId)
+    .single();
+
+  if (work?.media_path) {
+    await supabase.storage.from(MEDIA_BUCKETS.work).remove([work.media_path]);
+  }
+  if (work?.cover_path) {
+    await supabase.storage.from(MEDIA_BUCKETS.cover).remove([work.cover_path]);
+  }
+
+  const { error } = await supabase
+    .from("scripture_works")
+    .delete()
+    .eq("id", workId);
+  
+  if (error) notice(error.message);
+  notice("Scripture Work deleted.");
+}
+
+export async function deleteWallpaper(formData: FormData) {
+  await assertAdmin();
+  const wallpaperId = text(formData, "wallpaper_id");
+  if (!wallpaperId) notice("Unknown wallpaper.");
+
+  const supabase = createSupabaseServerClient();
+  
+  const { data: wallpaper } = await supabase
+    .from("scripture_wallpapers")
+    .select("storage_path")
+    .eq("id", wallpaperId)
+    .single();
+
+  if (wallpaper?.storage_path) {
+    await supabase.storage.from(MEDIA_BUCKETS.wallpaper).remove([wallpaper.storage_path]);
+  }
+
+  const { error } = await supabase
+    .from("scripture_wallpapers")
+    .delete()
+    .eq("id", wallpaperId);
+  
+  if (error) notice(error.message);
+  notice("Wallpaper deleted.");
+}

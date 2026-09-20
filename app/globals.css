@@ -569,3 +569,13 @@ a.passage-nav-link:hover .passage-nav-reference { color: var(--gold); }
   .footer-motto { width: 100%; text-align: center; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+
+/* Studio delete confirmation */
+.delete-confirm { display: inline-flex; align-items: center; gap: 10px; }
+.delete-confirm-text { color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: .18em; }
+.delete-yes { color: #e74c3c !important; border-color: #e74c3c !important; }
+.delete-yes:hover { background: #e74c3c !important; color: var(--ivory) !important; }
+.delete-no { color: var(--muted) !important; }
+.delete-trigger { color: var(--muted) !important; }
+.delete-trigger:hover { color: #e74c3c !important; }
