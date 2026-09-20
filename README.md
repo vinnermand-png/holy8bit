@@ -1,6 +1,6 @@
 # HOLY8BIT
 
-HOLY8BIT is a Next.js App Router site for Scripture and biblical stories through cinematic pixel art.
+HOLY8BIT is a Next.js App Router site for Scripture Works and cinematic Films rooted in the Bible.
 
 ## Stack
 
@@ -8,6 +8,7 @@ HOLY8BIT is a Next.js App Router site for Scripture and biblical stories through
 - React 18.3.1
 - TypeScript 5.6.2 (strict)
 - Tailwind CSS 3.4.13 with project-specific CSS tokens
+- Supabase clients and migration tooling prepared locally
 
 ## Development
 
@@ -20,61 +21,127 @@ npm run build
 npm run start
 ```
 
-## Structure
+Generate the structural Bible seed:
 
-- `app/`: App Router pages, metadata, robots, sitemap, and global styles
-- `components/`: shared header, footer, foundation pages, and artwork renderer
-- `content/home.ts`: typed homepage themes, stories, Scripture features, and archive slots
-- `content/wallpapers.ts`: typed curated wallpaper collection; currently empty until final artwork exists
-- `content/films.ts`: typed film collections and film entries
-- `public/images/`: optimized web artwork assets, organized by `home`, `scripture`, `stories`, and `gallery`
+```bash
+npm run generate:bible-seed
+```
 
-## Routes
+## Public Routes
 
-Real routes currently available: `/`, `/scripture`, `/stories`, `/films`, `/films/genesis`, `/films/genesis/in-the-beginning`, `/gallery`, `/wallpapers`, and `/about`. Individual Scripture, story, gallery, and wallpaper detail routes are intentionally not created until real content exists.
+- `/`
+- `/scripture`
+- `/scripture/[book]`
+- `/scripture/[book]/[passage]`
+- `/scripture/journey`
+- `/wallpapers`
+- `/wallpapers/download/[rendition]` (published-only download)
+- `/films`
+- `/films/[slug]`
+- `/about`
 
-## Films
+The former Stories, Gallery, and Wallpapers *presentational* routes were removed in the legacy cleanup. Wallpapers now exist as real, database-backed content: a rendition of a published Scripture Work. The Genesis nested Film URLs are retained only as redirects to the canonical `/films/[slug]` route.
 
-HOLY8BIT Films is a Scripture-rooted cinematic archive. The first collection is `/films/genesis` and its first real production entry is `/films/genesis/in-the-beginning`. Film content is controlled in `content/films.ts`.
+## Studio
 
-The current development preview is stored at `public/films/genesis/in-the-beginning/in-the-beginning-preview.mp4`. When a newer production cut exists, export an H.264 MP4 with the same filename and replace the file. The film page uses native HTML5 video with controls, `playsInline`, `preload="metadata"`, and no autoplay. A future poster can be added at `public/films/genesis/in-the-beginning/poster.webp` and assigned through `posterSrc` in the film content entry.
+`/admin` is the internal publishing surface (noindex, absent from every navigation). It signs in with Supabase Auth and is limited to rows in `admin_users`; the database RLS policies, not the UI, decide what an account may do. From the studio an administrator can:
 
-The `/films` and `/films/genesis` archive routes are included in the sitemap. The unfinished detail preview route is intentionally not included in the sitemap until the film is ready for public discovery.
+1. provision a canonical passage - the book/chapter/verse range is validated against `bible_chapters` and the passage key is derived by the database (`ensure_bible_passage`),
+2. create a Scripture Work with real artwork uploaded to `scripture-media` (plus an optional poster in `scripture-covers`),
+3. publish or return it to draft, and
+4. attach downloadable wallpaper renditions from `wallpaper-media`.
 
-## Artwork Workflow
+A published Scripture Work then appears automatically in the archive, its book page, its passage page, the journey, and - with a published rendition - the wallpaper experience. No public page is edited to publish anything.
 
-1. Export sensible-resolution WebP or AVIF artwork; keep raw masters outside public delivery when appropriate.
-2. Add the web asset under the relevant `public/images/` directory.
-3. Update the matching typed item in `content/home.ts` with its `image`, `alt`, and destination.
-4. Set `focalPosition` and optional `mobileFocalPosition` when the crop needs adjustment.
-5. Render it through `components/Artwork.tsx`; it supports `next/image`, responsive sizes, `object-fit: cover`, priority, and the temporary fallback.
-6. Verify desktop and mobile crops, then run lint, typecheck, and build.
+## Content Architecture
 
-The current homepage uses abstract development placeholders. They are deliberately not final biblical artwork and can be replaced without changing layout structure.
+The two core published work types are:
+
+- Scripture Work: a visualized Bible passage
+- Film: a larger cinematic production linked to a Bible passage
+
+The Bible is the structural backbone:
+
+```text
+BIBLE BOOK
+  -> PASSAGE
+      -> SCRIPTURE WORK
+      -> FILM
+```
+
+Public Scripture reads go through `lib/scripture/queries.ts`. It is the only source of
+Scripture content: there is no local JSON work list, no hardcoded book counts, and no
+hand-maintained previous/next or related-content mapping. Ordering is always canonical
+(book `canonical_order` -> chapter -> verse), never upload, creation, or title order.
+
+Published visibility is enforced by RLS plus an explicit `status = published` filter, so
+drafts cannot appear in archive counts, book pages, passage pages, journey, home, or sitemap.
+
+`lib/supabase/public.ts` is a cookie-free anonymous client used for public reads so the
+public routes never depend on a user session, and responses are not cached so a newly
+published work appears immediately.
+
+`content/bible.ts` is currently an immutable transitional UI fallback for the 66-book structure. It is used only while `bible_books` is unreachable, and it mirrors the seed exactly (book names, slugs, canonical order, chapter counts). Passage counts never fall back to it: they are always derived from published works. The long-term source is Supabase `bible_books` and `bible_chapters`.
+
+### Passage URLs and references
+
+Passage URLs use the canonical passage key with `:` separators expressed as `-`:
+`john:1:1-9` is published at `/scripture/john/1-1-9`. Lookups match the canonical
+segment of each published work, so no passage relationship is stored by hand and
+`/scripture/john/1:1-9` resolves to the same page. Every human-readable reference
+(`John 1:1–9`, `Genesis 1:1–2:3`, `John 1:5`, `Genesis 1`) is derived by
+`lib/bible/reference.ts` from the stored passage coordinates, never assembled inside a page.
+
+## Supabase Infrastructure
+
+Supabase migrations and structural seed files are in `supabase/`. The local clients are in `lib/supabase/`.
+
+The migration defines:
+
+- `bible_books`
+- `bible_chapters`
+- `bible_passages`
+- `admin_users`
+- `scripture_works`
+- `films`
+- validation triggers, indexes, RLS, and private Storage buckets
+
+The structural seed contains 66 books, 1,189 chapters, and the 66 canonical book slugs used by the public routes, using the Free.Bible WEB coordinate reference. It does not import Bible text. A translation and license decision is required before importing full Scripture text.
+
+Scripture text and audio ship as contracts with no placeholder content: `lib/bible/text.ts` (READ) and `lib/scripture/audio.ts` (LISTEN). Each registers a licensed provider once available; until then the public experience renders an explicit unavailable state rather than invented Scripture or unlicensed audio.
+
+The service secret is server-only and must never be committed or imported by Client Components. `.env.local` is ignored by Git.
+
+A second migration, `20260919000200_holy8bit_publishing.sql`, adds what the public pages need in order to be reachable with real content: the `ensure_bible_passage` function (the only supported way to create a passage, so a canonical key is never written by hand), the `scripture_wallpapers` table with its publication guard and RLS, and the private `wallpaper-media` bucket.
+
+### Current publishing state
+
+`supabase db push` has not been run against the configured development project yet: it reports every table missing (`PGRST205`) and lists no storage buckets, so the public Scripture routes fall back to the structural 66-book index and no passage page can resolve. Applying the two migrations and the structural seed is the single step that turns the empty archive into the real one; nothing in the app needs to change for that.
 
 ## Wallpapers
 
-The `/wallpapers` route is a Scripture-connected foundation page. The curated collection is controlled in `content/wallpapers.ts` and is intentionally empty until approved artwork exists.
+A wallpaper is never its own content model. `scripture_wallpapers` rows point at a Scripture Work, so a rendition inherits the passage, the canonical order, and the visibility of the work it renders; the database refuses to publish a wallpaper whose work is still a draft (`validate_wallpaper_publication`). Media lives in the private `wallpaper-media` bucket and is delivered only through short-lived server-signed URLs.
 
-Use this asset convention for future wallpaper entries:
+- `/wallpapers` lists published renditions grouped by the work they render, in canonical Bible order. It deliberately loads no artwork, so the index stays light and reads as an archive rather than an image gallery.
+- `/wallpapers/download/[rendition]` re-checks the published state on every request and redirects to a freshly signed URL with a download disposition, so no long-lived media URL is ever exposed or cached.
+- The passage page ends with the WALLPAPER section, where the artwork a visitor is already looking at can be taken away in the rendition that fits their screen. This does not disturb the approved mobile order above.
 
-- `public/images/wallpapers/previews/`: optimized WebP/AVIF website previews
-- `public/images/wallpapers/desktop/`: high-quality desktop download files
-- `public/images/wallpapers/mobile/`: high-quality mobile download files
+Wallpapers are optional: with none published, the passage page and the archive render nothing extra rather than an empty shell.
 
-Preview assets are for fast responsive page rendering. Download assets are separate and should prioritize visual quality. A wallpaper entry connects back to Scripture through `scriptureHref` and can use different desktop/mobile files and focal positions.
+## Films
 
-Future wallpaper workflow:
+Film content is currently represented locally in `content/films.ts` until Supabase publishing is available. The existing Genesis preview is preserved at:
 
-1. Finish a Scripture-rooted HOLY8BIT artwork.
-2. Create desktop and mobile wallpaper exports.
-3. Create an optimized website preview.
-4. Add each asset to the appropriate wallpapers directory.
-5. Add the typed entry to `content/wallpapers.ts` with meaningful alt text and Scripture connection.
-6. Set focal positions if desktop and mobile crops differ.
-7. Verify both responsive crops and download links.
-8. Run lint, typecheck, and build.
+```text
+public/films/genesis/in-the-beginning/in-the-beginning-preview.mp4
+```
 
-## SEO
+Its canonical public route is `/films/in-the-beginning`. The old nested Genesis URLs redirect for compatibility. The preview has not been migrated or marked as published in Supabase.
 
-Site-wide metadata is in `app/layout.tsx`. Route metadata is colocated with each foundation page. `app/robots.ts` and `app/sitemap.ts` expose only the real public routes, using `https://holy8bit.com` as the canonical domain. The favicon is a temporary minimal icon pending an approved final brand asset.
+## Artwork
+
+`components/Artwork.tsx` supports optimized `next/image` assets, responsive sizing, aspect-ratio containers, and focal positioning. Final artwork can replace temporary placeholders without changing the approved visual system.
+
+## Legacy Migration Notes
+
+The former Stories, Gallery, and Wallpapers implementations were presentational/static foundation content, not canonical database content, and they stay removed. Wallpapers returned in this phase as a real content type: renditions attached to published Scripture Works, never a standalone gallery. Existing local media is preserved; ambiguous legacy works still require an explicit Scripture Work decision before migration.

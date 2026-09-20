@@ -1,0 +1,10 @@
+project_id = "ljygrsektvzvvxqizbuc"
+
+[db]
+major_version = 15
+
+[auth]
+site_url = "http://localhost:3000"
+
+[storage]
+enabled = true
