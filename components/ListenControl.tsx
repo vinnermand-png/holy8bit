@@ -24,10 +24,9 @@ export default function ListenControl({ work }: { work: ScriptureAudioTarget }) 
 
   return (
     <div className="listen-state is-unavailable">
-      <p className="listen-state-line">AUDIO SOURCE NOT CONFIGURED</p>
+      <p className="listen-state-line">Audio recording not yet available</p>
       <p className="listen-state-note">
-        Scripture audio is served only from an authorized recording of {reference}. No placeholder audio is used while
-        that source is not configured.
+        An authorized Scripture recording for {reference} will appear here once configured.
       </p>
     </div>
   );

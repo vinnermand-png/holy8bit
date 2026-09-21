@@ -4,7 +4,7 @@ import type { PublicScriptureWork } from "../lib/scripture/queries";
 
 const UNAVAILABLE_COPY: Record<Extract<ScriptureTextResult, { status: "unavailable" }>["reason"], string> = {
   "translation-not-configured":
-    "Scripture text is served from a licensed Bible translation. The passage structure is in place; the text layer activates once an approved translation is configured.",
+    "Scripture text awaits an approved translation. The passage structure is in place — the text appears here once a licensed translation is configured.",
   "passage-not-in-translation": "This passage is not present in the configured translation yet.",
   "source-unreachable": "The Scripture text source is temporarily unavailable."
 };

@@ -2,22 +2,20 @@
 
 import { useState, type ReactNode } from "react";
 
-type TabId = "read" | "listen" | "watch";
+type TabId = "read" | "listen";
 
 /**
- * The approved passage panel: READ / LISTEN / WATCH switch the panel body, while the
- * Scripture text, audio and artwork themselves are rendered on the server and passed in as
+ * The approved passage panel: READ / LISTEN switch the panel body, while the
+ * Scripture text and audio themselves are rendered on the server and passed in as
  * slots. Nothing here fabricates content - an unavailable layer shows its own designed state.
  */
 export default function PassageTabs({
   read,
   listen,
-  watch,
   translation
 }: {
   read: ReactNode;
   listen: ReactNode;
-  watch: ReactNode;
   translation: string;
 }) {
   const [active, setActive] = useState<TabId>("read");
@@ -41,16 +39,6 @@ export default function PassageTabs({
           <path d="M2.4 12V8.6a6.6 6.6 0 0 1 13.2 0V12" fill="none" stroke="currentColor" strokeWidth="1.4" />
           <rect x="1" y="10.4" width="3.6" height="6.2" rx="1.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
           <rect x="13.4" y="10.4" width="3.6" height="6.2" rx="1.4" fill="none" stroke="currentColor" strokeWidth="1.3" />
-        </svg>
-      )
-    },
-    {
-      id: "watch",
-      label: "Watch",
-      icon: (
-        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" focusable="false">
-          <circle cx="8" cy="8" r="6.9" fill="none" stroke="currentColor" strokeWidth="1.3" />
-          <path d="M6.4 4.9 11.2 8l-4.8 3.1z" fill="currentColor" />
         </svg>
       )
     }
@@ -88,7 +76,7 @@ export default function PassageTabs({
           aria-labelledby={`passage-tab-${tab.id}`}
           hidden={active !== tab.id}
         >
-          {tab.id === "read" ? read : tab.id === "listen" ? listen : watch}
+          {tab.id === "read" ? read : listen}
         </div>
       ))}
     </div>

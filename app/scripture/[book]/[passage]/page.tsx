@@ -8,7 +8,6 @@ import PassageActions from "../../../../components/PassageActions";
 import PassageNavigation from "../../../../components/PassageNavigation";
 import PassageTabs from "../../../../components/PassageTabs";
 import RelatedScripture from "../../../../components/RelatedScripture";
-import ScriptureQuoteBand from "../../../../components/ScriptureQuoteBand";
 import ScriptureReading from "../../../../components/ScriptureReading";
 import ScriptureWorkMedia from "../../../../components/ScriptureWorkMedia";
 import SiteFooter from "../../../../components/SiteFooter";
@@ -48,6 +47,9 @@ export default async function PassagePage({ params }: Props) {
   const audio = resolveScriptureAudio(work);
   const heroVerse = text.status === "available" ? text.verses[0] : null;
 
+  // Translation label for the tab strip — never expose internal state.
+  const translationLabel = text.status === "available" ? text.translation : null;
+
   // Neighbours and related works arrive canonically ordered but unsigned; resolve only these.
   const [previousWork, nextWork, relatedWorks] = await Promise.all([
     previous ? resolvePublicWork(previous) : Promise.resolve(null),
@@ -62,6 +64,7 @@ export default async function PassagePage({ params }: Props) {
       </a>
       <Header />
       <main id="main-content" className="passage-main">
+        {/* Hero — uses cover/still as background, not the primary artwork */}
         <section className="passage-hero" aria-labelledby="passage-title">
           {art && (
             <div className="passage-hero-art" aria-hidden="true">
@@ -94,31 +97,26 @@ export default async function PassagePage({ params }: Props) {
               ) : (
                 <>
                   <p className="passage-quote-pending">{reference}</p>
-                  <p className="passage-quote-reference">Scripture text awaits an approved translation</p>
+                  <p className="passage-quote-reference">Awaiting an approved translation</p>
                 </>
               )}
             </aside>
           </div>
         </section>
 
+        {/* Main content: artwork left (~42%) + reading/listening panel right */}
         <div className="wrap passage-body-grid">
           <figure className="passage-stage">
-            <ScriptureWorkMedia work={work} sizes="(max-width: 800px) 100vw, 460px" priority preload="metadata" />
+            <ScriptureWorkMedia work={work} sizes="(max-width: 800px) 100vw, 420px" priority preload="metadata" />
             <figcaption className="visually-hidden">Artwork for {reference}</figcaption>
           </figure>
 
           <div className="passage-panel">
             <PassageTabs
-              translation={text.status === "available" ? text.translation : "NOT CONFIGURED"}
+              translation={translationLabel ?? ""}
               read={<ScriptureReading work={work} text={text} />}
               listen={<ListenControl work={work} />}
-              watch={
-                <div className="passage-watch">
-                  <ScriptureWorkMedia work={work} sizes="(max-width: 800px) 100vw, 560px" preload="metadata" />
-                </div>
-              }
             />
-            {/* The primary LISTEN action sits in the panel footer, so it stays reachable from every tab. */}
             <ListenButton src={audio.status === "ready" ? audio.url : null} label="Listen to Scripture" />
             <PassageActions title={`${reference} — ${work.title}`} />
             <PassageNavigation previous={previousWork} next={nextWork} bookName={book.name} />
@@ -131,7 +129,13 @@ export default async function PassagePage({ params }: Props) {
           <WallpaperRenditions wallpapers={wallpapers} reference={reference} />
         </div>
 
-        <ScriptureQuoteBand work={work} text={text} art={art} />
+        {/* Final quote — uses no artwork backdrop to avoid repeating the hero artwork */}
+        <section className="quote-band quote-band--plain" aria-label={`Scripture reference — ${reference}`}>
+          <div className="wrap quote-band-inner">
+            <p className="quote-band-pending">{reference}</p>
+            <p className="quote-band-note">HOLY8BIT · A cinematic Scripture archive</p>
+          </div>
+        </section>
       </main>
       <SiteFooter />
     </div>

@@ -54,7 +54,7 @@ export default function ListenButton({ src, label }: { src: string | null; label
       <p className="listen-button is-unavailable" role="note">
         <PlayMark paused />
         <span>{label}</span>
-        <span className="listen-button-state">NO AUTHORIZED RECORDING</span>
+        <span className="listen-button-state">Not yet available</span>
       </p>
     );
   }
