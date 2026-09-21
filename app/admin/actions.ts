@@ -85,6 +85,21 @@ export async function signOut() {
 }
 
 /**
+ * Returns the current Supabase access token so the browser client can upload
+ * directly to Storage (bypassing the Vercel body-size limit on server actions).
+ * Only callable by an authenticated admin.
+ */
+export async function getSupabaseAccessToken(): Promise<string | null> {
+  try {
+    const supabase = createSupabaseServerClient();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Creates a Scripture Work. The passage is provisioned by the database function, which
  * validates the range against bible_chapters and derives the canonical passage key, so the
  * Bible - not the form - decides where the work belongs.

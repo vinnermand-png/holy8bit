@@ -38,9 +38,11 @@ function refPreview(bookSlug: string, chapter: string, verseStart: string, verse
 export default function WorkForm({
   books,
   work,
+  accessToken,
 }: {
   books: BookOption[];
   work?: WorkData;
+  accessToken?: string | null;
 }) {
   const isEdit = !!work;
 
@@ -142,6 +144,7 @@ export default function WorkForm({
         currentPath={mediaPath || null}
         currentPreview={mediaPreviewUrl || null}
         uploadPrefix={storagePathForUpload()}
+        accessToken={accessToken}
         onUploaded={(path, previewUrl) => {
           setMediaPath(path);
           setMediaPreviewUrl(previewUrl);
@@ -161,6 +164,7 @@ export default function WorkForm({
         currentPath={coverPath || null}
         currentPreview={coverPreviewUrl || null}
         uploadPrefix={`covers/${bookSlug}-${chapter || "0"}-${verseStart || "0"}-${verseEnd || "0"}`}
+        accessToken={accessToken}
         onUploaded={(path, previewUrl) => {
           setCoverPath(path);
           setCoverPreviewUrl(previewUrl);

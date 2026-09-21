@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createScriptureWork, setWorkStatus, signIn, signOut, deleteScriptureWork, updateScriptureWork } from "./actions";
+import { createScriptureWork, setWorkStatus, signIn, signOut, deleteScriptureWork, updateScriptureWork, getSupabaseAccessToken } from "./actions";
 import DeleteConfirmButton from "../../components/DeleteConfirmButton";
 import { getAdminAccess, getStudioData } from "../../lib/admin/session";
 import { getScriptureDataSourceState } from "../../lib/scripture/queries";
@@ -47,7 +47,7 @@ export default async function StudioPage({ searchParams }: { searchParams: { not
     );
   }
 
-  const data = await getStudioData();
+  const [data, accessToken] = await Promise.all([getStudioData(), getSupabaseAccessToken()]);
   const publishedWorks = data.works.filter((w) => w.status === "published");
 
   /* ── EDIT VIEW ─────────────────────────────────── */
@@ -77,7 +77,7 @@ export default async function StudioPage({ searchParams }: { searchParams: { not
               <a className="text-link" href="/admin">BACK TO LIST</a>
             </div>
             <Notice message={notice} />
-            <WorkForm books={data.books} work={work} />
+            <WorkForm books={data.books} work={work} accessToken={accessToken} />
           </div>
         </main>
       </div>
@@ -98,7 +98,7 @@ export default async function StudioPage({ searchParams }: { searchParams: { not
               <a className="text-link" href="/admin">BACK TO LIST</a>
             </div>
             <Notice message={notice} />
-            <WorkForm books={data.books} />
+            <WorkForm books={data.books} accessToken={accessToken} />
           </div>
         </main>
       </div>

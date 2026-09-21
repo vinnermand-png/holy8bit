@@ -8,6 +8,7 @@ type MediaUploaderProps = {
   accept: string;
   label: string;
   uploadPrefix?: string;
+  accessToken?: string | null;
   onUploaded: (path: string, previewUrl: string) => void;
   onRemove?: () => void;
   currentPath?: string | null;
@@ -25,6 +26,7 @@ export default function MediaUploader({
   accept,
   label,
   uploadPrefix = "uploads",
+  accessToken,
   onUploaded,
   onRemove,
   currentPath,
@@ -47,7 +49,11 @@ export default function MediaUploader({
       try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        const supabase = accessToken
+          ? createClient(supabaseUrl, supabaseKey, {
+              global: { headers: { Authorization: `Bearer ${accessToken}` } },
+            })
+          : createClient(supabaseUrl, supabaseKey);
 
         const timestamp = Date.now();
         const cleanName = file.name
@@ -75,7 +81,7 @@ export default function MediaUploader({
         setUploading(false);
       }
     },
-    [bucket, uploadPrefix, onUploaded],
+    [bucket, uploadPrefix, accessToken, onUploaded],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
