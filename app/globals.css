@@ -297,18 +297,16 @@ section { padding: clamp(128px, 11vw, 176px) 0; }
 .passage-hero--plain { padding-bottom: clamp(104px, 10vw, 164px); background: radial-gradient(120% 118% at 78% 2%, rgba(184,154,90,.12), transparent 46%), linear-gradient(180deg, #0d100e, #090a09 60%); }
 .passage-hero--plain::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 47px, rgba(238,233,220,.032) 47px 48px); pointer-events: none; }
 .passage-hero--plain::after { content: ''; position: absolute; inset: auto 0 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,154,90,.45), transparent); }
-.passage-hero-inner { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: clamp(36px, 7vw, 110px); align-items: start; }
+.passage-hero-inner { position: relative; z-index: 1; display: block; }
 .passage-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: rgba(238,233,220,.7); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; }
 .passage-breadcrumb a { display: inline-flex; align-items: center; min-height: 30px; }
 .passage-breadcrumb a:hover { color: var(--gold); }
 .passage-breadcrumb span[aria-hidden] { color: var(--gold); }
-.passage-display { margin: 18px 0 10px; font: 400 clamp(2.9rem, 6.4vw, 6.6rem)/.88 Georgia, serif; letter-spacing: .01em; text-transform: uppercase; overflow-wrap: anywhere; }
-.passage-subtitle { margin: 0; font: 400 clamp(1.35rem, 2.4vw, 2.5rem)/1.08 Georgia, serif; letter-spacing: .015em; text-transform: uppercase; }
+/* The hero is a cinematic title card: reference dominant but restrained (~2/3 of the
+   original scale), no competing block on the right, generous quiet space around. */
+.passage-display { margin: 18px 0 12px; font: 400 clamp(2rem, 4.4vw, 4.4rem)/.92 Georgia, serif; letter-spacing: .01em; text-transform: uppercase; overflow-wrap: anywhere; }
+.passage-subtitle { margin: 0; font: 400 clamp(1.1rem, 1.8vw, 1.9rem)/1.12 Georgia, serif; letter-spacing: .015em; text-transform: uppercase; }
 .passage-lede { max-width: 620px; margin: 22px 0 0; color: var(--muted); font-size: clamp(14px, 1.15vw, 16px); line-height: 1.8; }
-.passage-hero-quote { padding-top: 34px; text-align: right; }
-.passage-quote { margin: 0; font: italic 400 clamp(1.1rem, 1.5vw, 1.5rem)/1.5 Georgia, serif; }
-.passage-quote-pending { margin: 0; font: 400 clamp(1.1rem, 1.5vw, 1.5rem)/1.5 Georgia, serif; letter-spacing: .06em; text-transform: uppercase; }
-.passage-quote-reference { margin: 18px 0 0; color: var(--gold); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; }
 /* The Scripture Work stage is a featured artwork, not a full-size player: it holds
    roughly a third of the content width so the reading interface keeps the page. */
 .passage-work { padding: 0; }
@@ -516,10 +514,8 @@ a.passage-nav-link:hover .passage-nav-reference { color: var(--gold); }
   .scripture-work-card .eyebrow { margin-top: 16px; font-size: 9px; letter-spacing: .2em; }
   .scripture-book-actions { margin-top: 58px; }
   .passage-hero { padding: 116px 0 46px; }
-  .passage-hero-inner { grid-template-columns: 1fr; gap: 26px; }
-  .passage-display { font-size: clamp(2.5rem, 12.5vw, 4.4rem); }
-  .passage-subtitle { font-size: clamp(1.2rem, 5.6vw, 1.9rem); }
-  .passage-hero-quote { padding-top: 0; text-align: left; }
+  .passage-display { font-size: clamp(1.7rem, 8.5vw, 3rem); }
+  .passage-subtitle { font-size: clamp(1rem, 4.4vw, 1.5rem); }
   .passage-body-grid { grid-template-columns: 1fr; gap: 34px; padding-top: 44px; }
   /* Mobile keeps one column, so the artwork is deliberately inset rather than
      stretching to full width and dominating the viewport: tight phones get a

@@ -58,7 +58,6 @@ export default async function PassagePage({ params }: Props) {
     ...work.passage
   });
   const audio = resolveScriptureAudio(work);
-  const heroVerse = text.status === "available" ? text.verses[0] : null;
 
   // Neighbours and related works arrive canonically ordered but unsigned; resolve only these.
   const [previousWork, nextWork, relatedWorks] = await Promise.all([
@@ -83,8 +82,6 @@ export default async function PassagePage({ params }: Props) {
           heroArt={artwork.hero ?? null}
           heroPortraitArt={artwork.heroPortrait ?? null}
           coverArt={work.coverPath}
-          heroVerse={heroVerse}
-          chapterStart={work.passage.chapter_start}
         />
 
         {/* 02 - ARTWORK + SCRIPTURE READING. One animated artwork beside one clean reading section. */}

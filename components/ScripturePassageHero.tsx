@@ -2,8 +2,6 @@ import Image from "next/image";
 import type { StaticImageData } from "next/image";
 import ArtDirectedArt from "./home/ArtDirectedArt";
 
-type HeroVerse = { verse: number; text: string };
-
 type ScripturePassageHeroProps = {
   bookName: string;
   bookSlug: string;
@@ -16,9 +14,6 @@ type ScripturePassageHeroProps = {
   heroPortraitArt: StaticImageData | null;
   /** The work's static cover still, used only when no dedicated plate is registered. */
   coverArt: string | null;
-  /** First verse of the passage when a translation is available; never fabricated. */
-  heroVerse: HeroVerse | null;
-  chapterStart: number;
 };
 
 /**
@@ -27,8 +22,9 @@ type ScripturePassageHeroProps = {
  * The hero is a still, cinematic field. It never renders the work's animated
  * artwork: a registered static plate wins, a published cover still is the only
  * fallback, and a passage with neither keeps the approved dark editorial field.
- * Breadcrumb, reference, title, description and the optional Scripture quote keep
- * the same hierarchy in every case.
+ * Breadcrumb, reference and title keep the same hierarchy in every case. The hero
+ * carries the passage information exactly once - there is no secondary block on
+ * the right, so the field stays quiet and atmospheric.
  */
 export default function ScripturePassageHero({
   bookName,
@@ -38,9 +34,7 @@ export default function ScripturePassageHero({
   description,
   heroArt,
   heroPortraitArt,
-  coverArt,
-  heroVerse,
-  chapterStart
+  coverArt
 }: ScripturePassageHeroProps) {
   const artDirected = heroArt && heroPortraitArt ? { desktop: heroArt, mobile: heroPortraitArt } : null;
 
@@ -75,22 +69,6 @@ export default function ScripturePassageHero({
           <p className="passage-subtitle scripture-display-title">{title}</p>
           {description && <p className="passage-lede">{description}</p>}
         </div>
-
-        <aside className="passage-hero-quote">
-          {heroVerse ? (
-            <>
-              <blockquote className="passage-quote">“{heroVerse.text}”</blockquote>
-              <p className="passage-quote-reference">
-                {bookName} {chapterStart}:{heroVerse.verse}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="passage-quote-pending">{reference}</p>
-              <p className="passage-quote-reference">Awaiting an approved translation</p>
-            </>
-          )}
-        </aside>
       </div>
     </section>
   );
