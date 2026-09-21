@@ -289,8 +289,14 @@ section { padding: clamp(128px, 11vw, 176px) 0; }
 .passage-hero { position: relative; overflow: hidden; padding: 168px 0 92px; background: #0b0d0c; }
 .passage-hero-copy { max-width: 660px; }
 .passage-hero-art { position: absolute; inset: 0; z-index: 0; }
+.passage-hero-art picture { display: block; width: 100%; height: 100%; }
 .passage-hero-art img { object-fit: cover; object-position: 60% 34%; }
 .passage-hero-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(6,8,8,.96) 0%, rgba(6,8,8,.78) 42%, rgba(6,8,8,.28) 70%, rgba(6,8,8,.7) 100%), linear-gradient(180deg, rgba(5,7,7,.9), rgba(5,7,7,0) 34%, rgba(5,7,7,.5)); }
+/* A passage with no dedicated hero plate keeps the approved dark editorial field rather
+   than reusing the work's animated artwork as a backdrop. */
+.passage-hero--plain { padding-bottom: clamp(104px, 10vw, 164px); background: radial-gradient(120% 118% at 78% 2%, rgba(184,154,90,.12), transparent 46%), linear-gradient(180deg, #0d100e, #090a09 60%); }
+.passage-hero--plain::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 47px, rgba(238,233,220,.032) 47px 48px); pointer-events: none; }
+.passage-hero--plain::after { content: ''; position: absolute; inset: auto 0 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(184,154,90,.45), transparent); }
 .passage-hero-inner { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: clamp(36px, 7vw, 110px); align-items: start; }
 .passage-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: rgba(238,233,220,.7); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; }
 .passage-breadcrumb a { display: inline-flex; align-items: center; min-height: 30px; }
@@ -303,7 +309,10 @@ section { padding: clamp(128px, 11vw, 176px) 0; }
 .passage-quote { margin: 0; font: italic 400 clamp(1.1rem, 1.5vw, 1.5rem)/1.5 Georgia, serif; }
 .passage-quote-pending { margin: 0; font: 400 clamp(1.1rem, 1.5vw, 1.5rem)/1.5 Georgia, serif; letter-spacing: .06em; text-transform: uppercase; }
 .passage-quote-reference { margin: 18px 0 0; color: var(--gold); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; }
-.passage-body-grid { display: grid; grid-template-columns: minmax(260px, 42%) minmax(0, 1fr); gap: clamp(32px, 3.6vw, 52px); align-items: start; padding-top: 64px; }
+/* The Scripture Work stage is a featured artwork, not a full-size player: it holds
+   roughly a third of the content width so the reading interface keeps the page. */
+.passage-work { padding: 0; }
+.passage-body-grid { display: grid; grid-template-columns: minmax(240px, 36%) minmax(0, 1fr); gap: clamp(32px, 4vw, 64px); align-items: start; padding-top: 64px; }
 .passage-stage { position: relative; width: 100%; margin: 0; aspect-ratio: 9 / 16; overflow: hidden; background: var(--charcoal); border: 1px solid var(--line); }
 .passage-panel { min-width: 0; }
 .passage-tabs { display: flex; align-items: center; gap: 4px; padding: 5px 6px; border: 1px solid var(--line); }
@@ -516,7 +525,10 @@ a.passage-nav-link:hover .passage-nav-reference { color: var(--gold); }
   .passage-subtitle { font-size: clamp(1.2rem, 5.6vw, 1.9rem); }
   .passage-hero-quote { padding-top: 0; text-align: left; }
   .passage-body-grid { grid-template-columns: 1fr; gap: 34px; padding-top: 44px; }
-  .passage-stage { max-width: 380px; margin: 0 auto; }
+  /* Mobile keeps one column, so the artwork is deliberately inset rather than
+     stretching to full width and dominating the viewport: tight phones get a
+     near-full-width plate, tablets keep it under half the content width. */
+  .passage-stage { max-width: clamp(288px, 46vw, 380px); margin: 0 auto; }
   .passage-tabs { flex-wrap: wrap; }
   .passage-tab { padding: 0 12px; }
   .passage-translation { width: 100%; margin: 6px 12px 2px; }
