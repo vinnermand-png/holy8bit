@@ -52,6 +52,7 @@ export default function WorkForm({
   const [mediaPath, setMediaPath] = useState(work?.mediaPath || "");
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState(work?.mediaPreviewUrl || "");
   const [coverPath, setCoverPath] = useState(work?.coverPath || "");
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState(work?.coverPreviewUrl || "");
   const [wholeChapter, setWholeChapter] = useState(work?.passage.whole_chapter || false);
   const [publish, setPublish] = useState(work?.status === "published");
 
@@ -152,10 +153,24 @@ export default function WorkForm({
       />
       <input type="hidden" name="media_path" value={mediaPath} />
 
-      <label className="studio-field">
-        <span className="eyebrow">COVER PATH (optional)</span>
-        <input name="cover_path" type="text" defaultValue={work?.coverPath || ""} placeholder="Optional cover image path" />
-      </label>
+      {/* Cover upload — replaces manual path entry */}
+      <MediaUploader
+        bucket="scripture-covers"
+        accept="image/png,image/jpeg,image/webp"
+        label="COVER ARTWORK (optional)"
+        currentPath={coverPath || null}
+        currentPreview={coverPreviewUrl || null}
+        uploadPrefix={`covers/${bookSlug}-${chapter || "0"}-${verseStart || "0"}-${verseEnd || "0"}`}
+        onUploaded={(path, previewUrl) => {
+          setCoverPath(path);
+          setCoverPreviewUrl(previewUrl);
+        }}
+        onRemove={() => {
+          setCoverPath("");
+          setCoverPreviewUrl("");
+        }}
+      />
+      <input type="hidden" name="cover_path" value={coverPath} />
 
       <label className="studio-check">
         <input name="status" type="checkbox" checked={publish} onChange={(e) => setPublish(e.target.checked)} />
