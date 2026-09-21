@@ -52,6 +52,8 @@ export type StudioWork = {
   mediaType: "video" | "image" | "gif";
   mediaPath: string;
   coverPath: string | null;
+  mediaPreviewUrl: string | null;
+  coverPreviewUrl: string | null;
   status: "draft" | "published";
   publishedAt: string | null;
   description: string | null;
@@ -98,26 +100,46 @@ export async function getStudioData(): Promise<StudioData> {
     status: row.status
   }));
 
-  const works = (worksResult.data ?? []).flatMap((work): StudioWork[] => {
-    const passage = passageMap.get(work.passage_key);
-    const book = passage ? bookMap.get(passage.book_id) : undefined;
-    if (!passage || !book) return [];
-    return [{
-      id: work.id,
-      title: work.title,
-      passageKey: work.passage_key,
-      bookName: book.name,
-      bookSlug: book.slug,
-      mediaType: work.media_type,
-      mediaPath: work.media_path,
-      coverPath: work.cover_path,
-      status: work.status,
-      publishedAt: work.published_at,
-      description: work.description,
-      passage,
-      wallpaperCount: wallpapers.filter((wallpaper) => wallpaper.workId === work.id).length
-    }];
-  });
+  // Sign storage URLs for preview
+  async function signUrl(bucket: string, path: string | null): Promise<string | null> {
+    if (!path) return null;
+    if (/^https?:\/\//.test(path)) return path;
+    try {
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
+      return error ? null : data.signedUrl;
+    } catch {
+      return null;
+    }
+  }
+
+  const works = await Promise.all(
+    (worksResult.data ?? []).flatMap(async (work): Promise<StudioWork | null> => {
+      const passage = passageMap.get(work.passage_key);
+      const book = passage ? bookMap.get(passage.book_id) : undefined;
+      if (!passage || !book) return null;
+      const [mediaPreviewUrl, coverPreviewUrl] = await Promise.all([
+        signUrl("scripture-media", work.media_path),
+        signUrl("scripture-covers", work.cover_path)
+      ]);
+      return {
+        id: work.id,
+        title: work.title,
+        passageKey: work.passage_key,
+        bookName: book.name,
+        bookSlug: book.slug,
+        mediaType: work.media_type,
+        mediaPath: work.media_path,
+        coverPath: work.cover_path,
+        mediaPreviewUrl,
+        coverPreviewUrl,
+        status: work.status,
+        publishedAt: work.published_at,
+        description: work.description,
+        passage,
+        wallpaperCount: wallpapers.filter((wallpaper) => wallpaper.workId === work.id).length
+      };
+    })
+  ).then((items) => items.filter((item): item is StudioWork => item !== null));
 
   return { books, works, wallpapers };
 }

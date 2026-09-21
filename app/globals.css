@@ -595,3 +595,7 @@ a.passage-nav-link:hover .passage-nav-reference { color: var(--gold); }
 .media-upload-area { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .media-file-info { color: var(--muted); font-size: 12px; }
 .media-error { color: #e74c3c; font-size: 12px; margin-top: 8px; }
+
+/* Reference preview */
+.studio-ref-preview { padding: 16px 20px; border: 1px solid var(--gold); background: rgba(184, 154, 90, .06); margin-bottom: 24px; }
+.studio-ref-text { font-family: Georgia, 'Times New Roman', serif; font-size: 28px; color: var(--gold); letter-spacing: .02em; margin-top: 4px; }

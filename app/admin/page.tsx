@@ -3,6 +3,7 @@ import { createScriptureWork, setWorkStatus, signIn, signOut, deleteScriptureWor
 import DeleteConfirmButton from "../../components/DeleteConfirmButton";
 import { getAdminAccess, getStudioData } from "../../lib/admin/session";
 import { getScriptureDataSourceState } from "../../lib/scripture/queries";
+import WorkForm from "../../components/admin/WorkForm";
 
 export const metadata: Metadata = { title: "Studio", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -162,126 +163,5 @@ export default async function StudioPage({ searchParams }: { searchParams: { not
         </div>
       </main>
     </div>
-  );
-}
-
-/* ── WORK FORM (shared create/edit) ──────────────── */
-
-function WorkForm({
-  books,
-  work,
-}: {
-  books: Array<{ id: number; name: string; slug: string; testament: string; chapterCount: number }>;
-  work?: {
-    id: string;
-    title: string;
-    bookSlug: string;
-    passage: {
-      chapter_start: number;
-      verse_start: number | null;
-      chapter_end: number;
-      verse_end: number | null;
-      whole_chapter: boolean;
-    };
-    description: string | null;
-    mediaType: string;
-    mediaPath: string;
-    coverPath: string | null;
-    status: string;
-  };
-}) {
-  const isEdit = !!work;
-  const action = isEdit ? updateScriptureWork : createScriptureWork;
-
-  return (
-    <form className="studio-form" action={action}>
-      {isEdit && <input type="hidden" name="work_id" value={work.id} />}
-
-      <div className="studio-grid">
-        <label className="studio-field">
-          <span className="eyebrow">BOOK *</span>
-          <select name="book_slug" defaultValue={work?.bookSlug || "john"} required>
-            {books.map((b) => (
-              <option key={b.slug} value={b.slug}>{b.name}</option>
-            ))}
-          </select>
-        </label>
-        <label className="studio-field">
-          <span className="eyebrow">CHAPTER *</span>
-          <input name="chapter_start" type="number" min={1} defaultValue={work?.passage.chapter_start || 1} required />
-        </label>
-        <label className="studio-field">
-          <span className="eyebrow">VERSE START</span>
-          <input name="verse_start" type="number" min={1} defaultValue={work?.passage.verse_start || ""} />
-        </label>
-        <label className="studio-field">
-          <span className="eyebrow">VERSE END</span>
-          <input name="verse_end" type="number" min={1} defaultValue={work?.passage.verse_end || ""} />
-        </label>
-      </div>
-
-      <label className="studio-check">
-        <input name="whole_chapter" type="checkbox" defaultChecked={work?.passage.whole_chapter || false} />
-        <span>WHOLE CHAPTER</span>
-      </label>
-
-      <label className="studio-field">
-        <span className="eyebrow">TITLE *</span>
-        <input name="title" type="text" maxLength={200} defaultValue={work?.title || ""} required />
-      </label>
-
-      <label className="studio-field">
-        <span className="eyebrow">DESCRIPTION</span>
-        <textarea name="description" rows={3} maxLength={600} defaultValue={work?.description || ""} />
-      </label>
-
-      <div className="studio-grid">
-        <label className="studio-field">
-          <span className="eyebrow">MEDIA TYPE *</span>
-          <select name="media_type" defaultValue={work?.mediaType || "image"}>
-            <option value="image">IMAGE</option>
-            <option value="gif">GIF</option>
-            <option value="video">VIDEO</option>
-          </select>
-        </label>
-        <label className="studio-field">
-          <span className="eyebrow">INTERNAL REF</span>
-          <input name="internal_production_ref" type="text" maxLength={80} defaultValue="" />
-        </label>
-      </div>
-
-      <label className="studio-field">
-        <span className="eyebrow">STORAGE PATH</span>
-        <input
-          name="media_path"
-          type="text"
-          defaultValue={work?.mediaPath || ""}
-          placeholder="works/john/john-1-4-5/filename.gif"
-        />
-        <small className="studio-help">Full path in Supabase Storage (including filename)</small>
-      </label>
-
-      <label className="studio-field">
-        <span className="eyebrow">COVER PATH (optional)</span>
-        <input name="cover_path" type="text" defaultValue={work?.coverPath || ""} placeholder="Optional cover image path" />
-      </label>
-
-      <label className="studio-check">
-        <input name="status" type="checkbox" value="published" defaultChecked={work?.status === "published"} />
-        <span>PUBLISH</span>
-      </label>
-
-      {isEdit && (
-        <div className="studio-current-media">
-          <p className="eyebrow">CURRENT MEDIA</p>
-          <p className="studio-copy">{work?.mediaPath || "None"}</p>
-        </div>
-      )}
-
-      <div className="studio-form-actions">
-        <button className="button" type="submit">{isEdit ? "UPDATE SCRIPTURE" : "SAVE SCRIPTURE WORK"}</button>
-        {!isEdit && <p className="studio-help">Save as draft first, then edit to upload media and publish.</p>}
-      </div>
-    </form>
   );
 }

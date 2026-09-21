@@ -7,6 +7,7 @@ type MediaUploaderProps = {
   bucket: string;
   accept: string;
   label: string;
+  uploadPrefix?: string;
   onUploaded: (path: string, previewUrl: string) => void;
   onRemove?: () => void;
   currentPath?: string | null;
@@ -23,10 +24,11 @@ export default function MediaUploader({
   bucket,
   accept,
   label,
+  uploadPrefix = "uploads",
   onUploaded,
   onRemove,
   currentPath,
-  currentPreview
+  currentPreview,
 }: MediaUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export default function MediaUploader({
           .replace(/-+/g, "-")
           .replace(/^[.-]+/, "")
           .slice(-60);
-        const path = "uploads/" + timestamp + "-" + cleanName;
+        const path = `${uploadPrefix}/${timestamp}-${cleanName}`;
 
         const { error: uploadError } = await supabase.storage
           .from(bucket)
@@ -62,17 +64,18 @@ export default function MediaUploader({
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+        // For preview: create a blob URL from the file directly (no signed URL needed for admin preview)
+        const blobUrl = URL.createObjectURL(file);
 
-        setPreview(urlData.publicUrl);
+        setPreview(blobUrl);
         setUploading(false);
-        onUploaded(path, urlData.publicUrl);
+        onUploaded(path, blobUrl);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Upload failed");
         setUploading(false);
       }
     },
-    [bucket, onUploaded]
+    [bucket, uploadPrefix, onUploaded],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
